@@ -1,0 +1,153 @@
+<!DOCTYPE html><html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Comerciante PRO</title>
+<style>
+body {font-family: Arial; background: linear-gradient(135deg,#43cea2,#185a9d); color:white; margin:0;}
+header {text-align:center; padding:20px; font-size:26px; font-weight:bold;}
+.container {padding:20px;}
+input,button {padding:10px; margin:5px; border:none; border-radius:8px;}
+button {background:#00ffcc; color:black; font-weight:bold; cursor:pointer;}
+button:hover {background:#00ccaa;}
+table {width:100%; margin-top:20px; border-collapse:collapse; background:rgba(0,0,0,0.3);}
+th,td {padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.2);}
+.stats {display:flex; gap:15px; margin-top:20px; flex-wrap:wrap;}
+.card {background:rgba(255,255,255,0.2); padding:15px; border-radius:12px; flex:1;}
+</style>
+</head>
+<body>
+<header>💼 Controle de Comerciante PRO</header>
+<div class="container"><h3>Novo Produto / Compra</h3>
+<input id="nome" placeholder="Nome do Produto">
+<input id="compra" type="number" placeholder="Preço Compra">
+<input id="venda" type="number" placeholder="Preço Venda">
+<input id="quantidade" type="number" placeholder="Quantidade">
+<button onclick="comprar()">➕ Adicionar / Comprar</button><h3>Estoque</h3>
+<table>
+<thead>
+<tr>
+<th>Produto</th>
+<th>Qtd</th>
+<th>Venda Atual</th>
+<th>Lucro</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="tabela"></tbody>
+</table><div class="stats">
+<div class="card">💰 Compras: <span id="totalCompra">0</span></div>
+<div class="card">💵 Vendas: <span id="totalVenda">0</span></div>
+<div class="card">📈 Lucro Total: <span id="lucroTotal">0</span></div>
+</div></div><script>
+let produtos = [];
+let totalCompra = 0;
+let totalVenda = 0;
+let lucroTotal = 0;
+
+function limparCampos(){
+ document.getElementById('nome').value='';
+ document.getElementById('compra').value='';
+ document.getElementById('venda').value='';
+ document.getElementById('quantidade').value='';
+}
+
+function comprar(){
+ let nome = document.getElementById('nome').value.trim();
+ let compra = parseFloat(document.getElementById('compra').value);
+ let venda = parseFloat(document.getElementById('venda').value);
+ let quantidade = parseInt(document.getElementById('quantidade').value);
+
+ if(!nome || isNaN(compra)||isNaN(venda)||isNaN(quantidade)){
+   alert('Preencha corretamente');
+   return;
+ }
+
+ let produto = produtos.find(p=>p.nome.toLowerCase()===nome.toLowerCase());
+
+ if(!produto){
+   produto={nome,venda,quantidade:0,batches:[],lucro:0};
+   produtos.push(produto);
+ }
+
+ produto.quantidade+=quantidade;
+ produto.venda=venda; // atualiza preço de venda com o mercado
+ produto.batches.push({preco:compra,qtd:quantidade});
+
+ totalCompra+=compra*quantidade;
+
+ limparCampos();
+ atualizar();
+}
+
+function vender(index){
+ let p=produtos[index];
+ if(p.quantidade<=0) return;
+
+ let batch=p.batches[0];
+ let custo=batch.preco;
+ batch.qtd--;
+ if(batch.qtd===0) p.batches.shift();
+
+ p.quantidade--;
+ totalVenda+=p.venda;
+
+ let lucro=p.venda-custo;
+ p.lucro+=lucro;
+ lucroTotal+=lucro;
+
+ atualizar();
+}
+
+function editarPreco(index){
+ let novo = parseFloat(prompt('Novo preço de venda:'));
+ if(isNaN(novo)) return;
+
+ produtos[index].venda = novo;
+ atualizar();
+}
+
+function adicionarQtd(index){
+ let qtd=parseInt(prompt('Quantidade:'));
+ let preco=parseFloat(prompt('Preço compra:'));
+ if(isNaN(qtd)||isNaN(preco)) return;
+
+ let p=produtos[index];
+ p.quantidade+=qtd;
+ p.batches.push({preco:preco,qtd:qtd});
+ totalCompra+=preco*qtd;
+
+ atualizar();
+}
+
+function remover(index){
+ produtos.splice(index,1);
+ atualizar();
+}
+
+function atualizar(){
+ let tabela=document.getElementById('tabela');
+ tabela.innerHTML='';
+
+ produtos.forEach((p,i)=>{
+ tabela.innerHTML+=`
+ <tr>
+ <td>${p.nome}</td>
+ <td>${p.quantidade}</td>
+ <td>${p.venda}</td>
+ <td>${p.lucro.toFixed(2)}</td>
+ <td>
+ <button onclick="vender(${i})">Vender</button>
+ <button onclick="editarPreco(${i})">Editar Preço</button>
+ <button onclick="adicionarQtd(${i})">+Estoque</button>
+ <button onclick="remover(${i})">Remover</button>
+ </td>
+ </tr>`;
+ });
+
+ document.getElementById('totalCompra').innerText=totalCompra.toFixed(2);
+ document.getElementById('totalVenda').innerText=totalVenda.toFixed(2);
+ document.getElementById('lucroTotal').innerText=lucroTotal.toFixed(2);
+}
+</script></body>
+</html>
