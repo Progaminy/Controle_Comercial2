@@ -2,9 +2,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Comerciante PRO</title>
+<title>Controle de Comerciante PRO+</title>
 <style>
-body {font-family: Arial; background: linear-gradient(135deg,#ff512f,#dd2476); color:white; margin:0;}
+body {font-family: Arial; background: linear-gradient(135deg,#1f4037,#99f2c8); color:white; margin:0;}
 header {text-align:center; padding:20px; font-size:26px; font-weight:bold;}
 .container {padding:20px;}
 input,button {padding:10px; margin:5px; border:none; border-radius:8px;}
@@ -18,7 +18,7 @@ footer {text-align:center; margin-top:30px; opacity:0.8;}
 </style>
 </head>
 <body>
-<header>💼 Controle de Comerciante PRO</header>
+<header>💼 Controle de Comerciante PRO+</header>
 <div class="container"><h3>Novo Produto / Compra</h3>
 <input id="nome" placeholder="Nome do Produto">
 <input id="compra" type="number" placeholder="Preço Compra">
@@ -32,15 +32,18 @@ footer {text-align:center; margin-top:30px; opacity:0.8;}
 <th>Qtd</th>
 <th>Venda</th>
 <th>Lucro</th>
-<th>% Recuperação</th>
+<th>Bruto</th>
+<th>Líquido</th>
+<th>% Recup.</th>
 <th>Ações</th>
 </tr>
 </thead>
 <tbody id="tabela"></tbody>
 </table><div class="stats">
 <div class="card">💰 Compras: <span id="totalCompra">0</span></div>
-<div class="card">💵 Vendas (Bruto): <span id="totalVenda">0</span></div>
-<div class="card">📈 Lucro Total: <span id="lucroTotal">0</span></div>
+<div class="card">💵 Vendas Bruto: <span id="totalVenda">0</span></div>
+<div class="card">📉 Custos Vendidos: <span id="custos">0</span></div>
+<div class="card">📈 Lucro Líquido: <span id="lucroTotal">0</span></div>
 <div class="card">💼 Capital Recuperado: <span id="capitalRecuperado">0</span></div>
 </div></div><footer>APP criado por Pensador Sem Fronteiras</footer><script>
 let produtos = [];
@@ -48,6 +51,7 @@ let totalCompra = 0;
 let totalVenda = 0;
 let lucroTotal = 0;
 let capitalRecuperado = 0;
+let custosTotais = 0;
 
 function limparCampos(){
  document.getElementById('nome').value='';
@@ -62,15 +66,12 @@ function comprar(){
  let venda = parseFloat(document.getElementById('venda').value);
  let quantidade = parseInt(document.getElementById('quantidade').value);
 
- if(!nome || isNaN(compra)||isNaN(venda)||isNaN(quantidade)){
-   alert('Preencha corretamente');
-   return;
- }
+ if(!nome || isNaN(compra)||isNaN(venda)||isNaN(quantidade)) return alert('Preencha corretamente');
 
  let produto = produtos.find(p=>p.nome.toLowerCase()===nome.toLowerCase());
 
  if(!produto){
-   produto={nome,venda,quantidade:0,batches:[],lucro:0,custoVendido:0};
+   produto={nome,venda,quantidade:0,batches:[],lucro:0,custoVendido:0,receita:0};
    produtos.push(produto);
  }
 
@@ -93,23 +94,23 @@ function vender(index){
  if(batch.qtd===0) p.batches.shift();
 
  p.quantidade--;
- totalVenda+=p.venda;
+ p.receita += p.venda;
+ totalVenda += p.venda;
 
  let lucro=p.venda-custo;
  p.lucro+=lucro;
  lucroTotal+=lucro;
 
- // capital recuperado (sem lucro)
  p.custoVendido+=custo;
  capitalRecuperado+=custo;
+ custosTotais+=custo;
 
  atualizar();
 }
 
 function editarPreco(index){
- let novo = parseFloat(prompt('Novo preço de venda:'));
- if(isNaN(novo)) return;
- produtos[index].venda = novo;
+ let novo = parseFloat(prompt('Novo preço:'));
+ if(!isNaN(novo)) produtos[index].venda = novo;
  atualizar();
 }
 
@@ -126,9 +127,9 @@ function adicionarQtd(index){
  atualizar();
 }
 
-function calcularRecuperacao(p){
- if(p.custoVendido===0) return 0;
- return ((p.custoVendido / totalCompra) * 100);
+function remover(index){
+ produtos.splice(index,1);
+ atualizar();
 }
 
 function atualizar(){
@@ -136,7 +137,9 @@ function atualizar(){
  tabela.innerHTML='';
 
  produtos.forEach((p,i)=>{
- let recuperacao = totalCompra>0 ? ((p.custoVendido/totalCompra)*100).toFixed(1) : 0;
+ let bruto = p.receita;
+ let liquido = p.lucro;
+ let rec = totalCompra>0 ? ((p.custoVendido/totalCompra)*100).toFixed(1) : 0;
 
  tabela.innerHTML+=`
  <tr>
@@ -144,7 +147,9 @@ function atualizar(){
  <td>${p.quantidade}</td>
  <td>${p.venda}</td>
  <td>${p.lucro.toFixed(2)}</td>
- <td>${recuperacao}%</td>
+ <td>${bruto.toFixed(2)}</td>
+ <td>${liquido.toFixed(2)}</td>
+ <td>${rec}%</td>
  <td>
  <button onclick="vender(${i})">Vender</button>
  <button onclick="editarPreco(${i})">Preço</button>
@@ -158,11 +163,7 @@ function atualizar(){
  document.getElementById('totalVenda').innerText=totalVenda.toFixed(2);
  document.getElementById('lucroTotal').innerText=lucroTotal.toFixed(2);
  document.getElementById('capitalRecuperado').innerText=capitalRecuperado.toFixed(2);
-}
-
-function remover(index){
- produtos.splice(index,1);
- atualizar();
+ document.getElementById('custos').innerText=custosTotais.toFixed(2);
 }
 </script></body>
 </html>
