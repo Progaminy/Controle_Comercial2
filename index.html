@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Controle de Comerciante PRO</title>
 <style>
-body {font-family: Arial; background: linear-gradient(135deg,#43cea2,#185a9d); color:white; margin:0;}
+body {font-family: Arial; background: linear-gradient(135deg,#ff512f,#dd2476); color:white; margin:0;}
 header {text-align:center; padding:20px; font-size:26px; font-weight:bold;}
 .container {padding:20px;}
 input,button {padding:10px; margin:5px; border:none; border-radius:8px;}
@@ -14,6 +14,7 @@ table {width:100%; margin-top:20px; border-collapse:collapse; background:rgba(0,
 th,td {padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.2);}
 .stats {display:flex; gap:15px; margin-top:20px; flex-wrap:wrap;}
 .card {background:rgba(255,255,255,0.2); padding:15px; border-radius:12px; flex:1;}
+footer {text-align:center; margin-top:30px; opacity:0.8;}
 </style>
 </head>
 <body>
@@ -29,21 +30,24 @@ th,td {padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255
 <tr>
 <th>Produto</th>
 <th>Qtd</th>
-<th>Venda Atual</th>
+<th>Venda</th>
 <th>Lucro</th>
+<th>% Recuperação</th>
 <th>Ações</th>
 </tr>
 </thead>
 <tbody id="tabela"></tbody>
 </table><div class="stats">
 <div class="card">💰 Compras: <span id="totalCompra">0</span></div>
-<div class="card">💵 Vendas: <span id="totalVenda">0</span></div>
+<div class="card">💵 Vendas (Bruto): <span id="totalVenda">0</span></div>
 <div class="card">📈 Lucro Total: <span id="lucroTotal">0</span></div>
-</div></div><script>
+<div class="card">💼 Capital Recuperado: <span id="capitalRecuperado">0</span></div>
+</div></div><footer>APP criado por Pensador Sem Fronteiras</footer><script>
 let produtos = [];
 let totalCompra = 0;
 let totalVenda = 0;
 let lucroTotal = 0;
+let capitalRecuperado = 0;
 
 function limparCampos(){
  document.getElementById('nome').value='';
@@ -66,16 +70,15 @@ function comprar(){
  let produto = produtos.find(p=>p.nome.toLowerCase()===nome.toLowerCase());
 
  if(!produto){
-   produto={nome,venda,quantidade:0,batches:[],lucro:0};
+   produto={nome,venda,quantidade:0,batches:[],lucro:0,custoVendido:0};
    produtos.push(produto);
  }
 
  produto.quantidade+=quantidade;
- produto.venda=venda; // atualiza preço de venda com o mercado
+ produto.venda=venda;
  produto.batches.push({preco:compra,qtd:quantidade});
 
  totalCompra+=compra*quantidade;
-
  limparCampos();
  atualizar();
 }
@@ -96,13 +99,16 @@ function vender(index){
  p.lucro+=lucro;
  lucroTotal+=lucro;
 
+ // capital recuperado (sem lucro)
+ p.custoVendido+=custo;
+ capitalRecuperado+=custo;
+
  atualizar();
 }
 
 function editarPreco(index){
  let novo = parseFloat(prompt('Novo preço de venda:'));
  if(isNaN(novo)) return;
-
  produtos[index].venda = novo;
  atualizar();
 }
@@ -120,9 +126,9 @@ function adicionarQtd(index){
  atualizar();
 }
 
-function remover(index){
- produtos.splice(index,1);
- atualizar();
+function calcularRecuperacao(p){
+ if(p.custoVendido===0) return 0;
+ return ((p.custoVendido / totalCompra) * 100);
 }
 
 function atualizar(){
@@ -130,15 +136,18 @@ function atualizar(){
  tabela.innerHTML='';
 
  produtos.forEach((p,i)=>{
+ let recuperacao = totalCompra>0 ? ((p.custoVendido/totalCompra)*100).toFixed(1) : 0;
+
  tabela.innerHTML+=`
  <tr>
  <td>${p.nome}</td>
  <td>${p.quantidade}</td>
  <td>${p.venda}</td>
  <td>${p.lucro.toFixed(2)}</td>
+ <td>${recuperacao}%</td>
  <td>
  <button onclick="vender(${i})">Vender</button>
- <button onclick="editarPreco(${i})">Editar Preço</button>
+ <button onclick="editarPreco(${i})">Preço</button>
  <button onclick="adicionarQtd(${i})">+Estoque</button>
  <button onclick="remover(${i})">Remover</button>
  </td>
@@ -148,6 +157,12 @@ function atualizar(){
  document.getElementById('totalCompra').innerText=totalCompra.toFixed(2);
  document.getElementById('totalVenda').innerText=totalVenda.toFixed(2);
  document.getElementById('lucroTotal').innerText=lucroTotal.toFixed(2);
+ document.getElementById('capitalRecuperado').innerText=capitalRecuperado.toFixed(2);
+}
+
+function remover(index){
+ produtos.splice(index,1);
+ atualizar();
 }
 </script></body>
 </html>
